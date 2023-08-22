@@ -1,0 +1,87 @@
+import library.*;  
+  COMPILER PVMAsm $CN
+  /* Grammar for subset of PVM assembler language
+     P.D. Terry, Rhodes University */
+	 
+	public static OutFile output;
+  
+  CHARACTERS
+    control     = CHR(0) .. CHR(31) .
+    Printable   = ANY - control .
+    InString    = Printable - '"' .
+    Digits      = "0123456789" .
+    LF          = CHR(10) .
+    CR          = CHR(13) .
+  
+  TOKENS
+    Number      = [ "-" ] Digits { Digits } .
+    String      = '"' { InString } '"' .
+    EOL         = LF .
+    Comment     = ";" { Printable } CR .
+  
+  IGNORE control - LF
+  
+  PRODUCTIONS
+    PVMAsm									(. String everything = "";.)  
+	= { Statement<out everything>			(. output.write(everything);.)
+	} .
+	
+    Statement<out String statementVal>		(. statementVal=""; String statementVal2;.)
+	= [ Number 								(. statementVal+= token.val;.)] 
+	[ Instruction<out statementVal2> 		(. statementVal+= statementVal2;.)] 
+	[ Comment								(. statementVal+= token.val;.) ] 
+	SYNC EOL		 						(. statementVal+= "\n";.)
+	.
+	
+    Instruction<out String instructionVal> 	(. instructionVal ="";.)	
+	= TwoWord<out instructionVal>			
+	| OneWord<out instructionVal>			
+	| PrintString<out instructionVal> 		
+	.
+	
+    TwoWord<out String tword>			    (. tword = ""; String tword2="";.)     
+	= ( "LDA"								(. tword="LDA ";.)
+	| "LDC"									(. tword="LDC ";.)
+	| "DSP" 								(. tword="DSP ";.)
+	| "BRN"									(. tword="BRN ";.)
+	| "BZE"									(. tword="BZE ";.)
+	) 
+	Number									(. tword2 = token.val;
+												tword+=tword2;.) 
+	.
+	
+    OneWord<out String oword>				(. oword = "";.)				
+    = (   "ADD"								(. oword = "ADD";.)							   
+	| "AND"  								(. oword = "AND";.)
+	| "ANEW" 								(. oword = "ANEW";.)
+	| "CEQ" 								(. oword = "CEQ";.)
+	| "CGE" 								(. oword = "CGE";.) 
+	| "CGT"									(. oword = "CGT";.)  
+	| "CLE" 								(. oword = "CLE";.) 
+	| "CLT"									(. oword = "CLT";.)
+    | "CNE" 								(. oword = "CNE";.) 
+	| "DIV"  								(. oword = "DIV";.)
+	| "HALT" 								(. oword = "HALT";.)
+	| "INPB"								(. oword = "INPB";.) 
+	| "INPI" 								(. oword = "INPI";.)
+	| "LDV"  								(. oword = "LDV";.)
+	| "LDXA" 								(. oword = "LDXA";.)
+	| "MUL"									(. oword = "MUL";.)
+    | "NEG"  								(. oword = "NEG";.)
+	| "NOP"  								(. oword = "NOP";.)
+	| "NOT"  								(. oword = "NOT";.)
+	| "OR"   								(. oword = "OR";.)
+	| "PRNB" 								(. oword = "PRNB";.)
+	| "PRNI" 								(. oword = "PRNI";.)
+	| "PRNL" 								(. oword = "PRNL";.)
+	| "REM"									(. oword = "REM";.)
+    | "STO"  								(. oword = "STO";.)
+	| "SUB" 								(. oword = "SUB";.)
+	) .
+    
+	PrintString<out String ps>				(. ps = ""; String str="";.) 
+	= "PRNS"								(. ps = "PRNS ";.)
+	String 									(. str += token.val; ps+= str;.)
+	.
+  
+  END PVMAsm.
