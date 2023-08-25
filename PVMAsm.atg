@@ -4,6 +4,7 @@ import library.*;
      P.D. Terry, Rhodes University */
 	 
 	public static OutFile output;
+	static int inum=0;
   
   CHARACTERS
     control     = CHR(0) .. CHR(31) .
@@ -26,28 +27,43 @@ import library.*;
 	= { Statement<out everything>			(. output.write(everything);.)
 	} .
 	
-    Statement<out String statementVal>		(. statementVal=""; String statementVal2;.)
-	= [ Number 								(. statementVal+= token.val;.)] 
-	[ Instruction<out statementVal2> 		(. statementVal+= statementVal2;.)] 
+    Statement<out String statementVal>		(. statementVal=""; String statementVal2; int numDigits=0; int instructionLen=0;.)
+	= ( Number 								(. statementVal= token.val; numDigits = statementVal.length();.)
+	|										(. statementVal += inum; numDigits=statementVal.length();.)
+	)
+	( Instruction<out statementVal2> 		(. for (int i=0; i<(6-numDigits); i++){
+													statementVal+=" ";
+												}
+											   statementVal+=statementVal2;
+											   instructionLen = statementVal.length();
+											   for (int m=0; m<(19-instructionLen);m++){
+													statementVal=statementVal+" ";
+											   }
+											   .)
+	|										(. for (int n=0; n<(19-numDigits); n++){statementVal+=" ";}.)									
+	)
 	[ Comment								(. statementVal+= token.val;.) ] 
 	SYNC EOL		 						(. statementVal+= "\n";.)
 	.
 	
     Instruction<out String instructionVal> 	(. instructionVal ="";.)	
-	= TwoWord<out instructionVal>			
-	| OneWord<out instructionVal>			
-	| PrintString<out instructionVal> 		
+	= TwoWord<out instructionVal>			(. inum+=2; .)		
+	| OneWord<out instructionVal>			(. inum+=1; .) 
+	| PrintString<out instructionVal> 		(. inum+=2; .)
 	.
 	
     TwoWord<out String tword>			    (. tword = ""; String tword2="";.)     
-	= ( "LDA"								(. tword="LDA ";.)
-	| "LDC"									(. tword="LDC ";.)
-	| "DSP" 								(. tword="DSP ";.)
-	| "BRN"									(. tword="BRN ";.)
-	| "BZE"									(. tword="BZE ";.)
+	= ( "LDA"								(. tword="LDA";.)
+	| "LDC"									(. tword="LDC";.)
+	| "DSP" 								(. tword="DSP";.)
+	| "BRN"									(. tword="BRN";.)
+	| "BZE"									(. tword="BZE";.)
 	) 
 	Number									(. tword2 = token.val;
-												tword+=tword2;.) 
+											   for (int j=0; j<(13-tword.length());j++){
+													tword+=" ";
+												}
+											   tword+=tword2;.) 
 	.
 	
     OneWord<out String oword>				(. oword = "";.)				
@@ -80,8 +96,8 @@ import library.*;
 	) .
     
 	PrintString<out String ps>				(. ps = ""; String str="";.) 
-	= "PRNS"								(. ps = "PRNS ";.)
-	String 									(. str += token.val; ps+= str;.)
+	= "PRNS"								(. ps = "PRNS";.)
+	String 									(. str += token.val; ps= ps+"    "+str;.)
 	.
   
   END PVMAsm.
