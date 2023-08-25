@@ -1,0 +1,49 @@
+	 import library.*;
+	 import java.util.*;
+	 COMPILER RE $CN
+     /* Regular expression grammar - determine underlying alphabet 
+		and where terminals are used (Java version)
+		P.D. Terry, Rhodes University; modified KL Bradshaw 2023 */
+		public static OutFile output;
+		public static ArrayList<Character>atomicList=new ArrayList<>();
+      CHARACTERS
+        lf       = CHR(10) .
+		control  = CHR(1) .. CHR(31) .
+        noquote1 = ANY - control - "'" - CHR(0) .
+        noquote2 = ANY - control - '"' - CHR(0) .
+        meta     = "()*|.;[]-?+" .
+        simple   = ANY - control - "'" - '"' - meta - CHR(0) .
+
+      TOKENS
+        atomic  = simple .
+        escaped = "'" noquote1 "'" | '"' noquote2 '"' .
+		EOL     = lf .
+		
+      IGNORE  control - lf
+		
+      PRODUCTIONS
+        RE         												
+		= 														(. Table.clearTable(); int numExpression = 1;.)
+		{ 
+		Expression 												(. for (char c: atomicList){Table.addRef(c,numExpression);}.)
+		EOL 													(. atomicList = new ArrayList<>(); numExpression+=1;.)													
+		} 
+		EOF 													(. String sTable = Table.printTable(); output.write(sTable); int r=1; String alphabets=""; while (r<numExpression){alphabets = alphabets+"\n" + Table.printAlphabet(r); r++;} output.write(alphabets); .)													
+		.
+        Expression 
+		= Term { "|" Term } .
+        Term       
+		= Factor { [ "." ] Factor } .
+        Factor     
+		= Element [ "*" | "?" | "+" ] .
+        Element    
+		= Atom | Range | "(" Expression ")" .
+        Range      
+		= "[" OneRange { OneRange } "]" .
+        OneRange   
+		= Atom [ "-" Atom ] .
+        Atom       
+		= 
+		atomic 													(.atomicList.add(token.val.charAt(0)); .)
+		| escaped .
+      END RE.
